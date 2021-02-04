@@ -257,7 +257,7 @@ PLATFORMS
   x64-mingw32
 
 DEPENDENCIES
-  github-pages (~> 211)
+  github-pages
   jekyll
 
 BUNDLED WITH
