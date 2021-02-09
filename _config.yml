@@ -1,4 +1,4 @@
 description: Learning docs in gitHub
 url: https://ldl5007.github.io/self-docs/
 markdown: kramdown
-theme: jekyll-theme-midnight
+remote_theme: pmarsceill/just-the-docs
