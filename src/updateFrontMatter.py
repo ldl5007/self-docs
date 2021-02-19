@@ -1,4 +1,5 @@
 
+from os.path import dirname
 from warnings import catch_warnings
 import frontmatter
 from markdown.core import markdown
@@ -25,9 +26,6 @@ class MdInfo:
         self.isDir = False
         self.node_name = fileName.strip()
 
-    def __str__(self) -> str:
-        return ''
-
 
 def getMdTitle(mdFileName: str) -> str:
     returnTitle = None
@@ -46,6 +44,11 @@ def getMdTitle(mdFileName: str) -> str:
 
     return returnTitle
 
+def parseFileName(path: str) -> str:
+    fileName = os.path.split(path)[1]
+    fileName = os.path.splitext(fileName)[0]
+    return fileName
+
 def updateFrontMatterBlock(mdInfo: MdInfo):
 
     mfb = frontmatter.load(testFile)
@@ -54,7 +57,9 @@ def updateFrontMatterBlock(mdInfo: MdInfo):
     mfb['title'] = mdInfo.title
     if mdInfo.parent != None:
         mfb['parent'] = mdInfo.parent
-    
+    mfb['has_children'] = mdInfo.has_children
+    mfb['nav_order'] = mdInfo.nav_order
+
     try:
         result = frontmatter.dumps(mfb)
         writeFile = open(testFile, 'w')
@@ -63,8 +68,8 @@ def updateFrontMatterBlock(mdInfo: MdInfo):
         print(err)
         pass
 
-def list_files(startpath) -> list[MdInfo]:
-    returnList = []
+def find_md_files(startpath) -> dict[MdInfo]:
+    mdFilesDict = dict()
     for root, dirs, files in os.walk(startpath):
         level = root.replace(startpath, '').count(os.sep)
         indent = ' ' * 4 * (level)
@@ -72,7 +77,8 @@ def list_files(startpath) -> list[MdInfo]:
         mdInfo = MdInfo()
         mdInfo.setDirName(dirName)
         mdInfo.node_path = '{}\\{}'.format(root, 'index.md')
-        returnList.append(mdInfo)
+        
+        mdFilesDict[mdInfo.node_path] = mdInfo
 
         print(dirName + ':')
         subindent = ' ' * 4 * (level + 1)
@@ -82,23 +88,36 @@ def list_files(startpath) -> list[MdInfo]:
             mdInfo = MdInfo()
             mdInfo.setFileName(fileName)
             mdInfo.node_path = '{}\\{}'.format(root, f)
-            returnList.append(mdInfo)
 
-    return returnList
+            if mdFilesDict.get(mdInfo.node_path) == None:
+                ext:str
+                ext = os.path.splitext(f)[1]
+                if ext.lower() == ".md":
+                    print(ext)
+                    print(dirName)
+                    mdFilesDict[mdInfo.node_path] = mdInfo
+
+    return mdFilesDict
 
 
-mdList = list_files("docs") 
-for md in mdList:
-    print(md.__dict__)
+mdDict = find_md_files("docs") 
+
+# value: MdInfo
+# for key, value in mdDict.items():
+#     print('{}: {}'.format(key, value.__dict__))
+#     print(parseFileName(value.node_name))
 
 testFile = 'test_file.md'
+testFile = 'docs\\test-folder1\\test-file1.md'
 
 mdInfo = MdInfo()
 
 fileTitle = getMdTitle(testFile)
+fileName  = parseFileName(testFile)
 if fileTitle is not None: 
-    fileName = os.path.splitext(testFile)[0]
     mdInfo.title = "{fname}: {title}".format(fname = fileName, title = fileTitle)
+else:
+    mdInfo.title = "{fname}: {title}".format(fname = fileName, title = mdInfo.title)
 
 updateFrontMatterBlock(mdInfo)
 
